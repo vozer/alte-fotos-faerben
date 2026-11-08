@@ -1,8 +1,8 @@
 # Alte Fotos färben
 
-This local Electron app colorizes one JPEG or PNG photo with DeOldify Stable.
-Keep photos on the device. Do not add cloud upload, analytics, accounts, or
-photo-library storage.
+This local Electron app colorizes one JPEG or PNG photo with DeOldify Stable
+or DDColor Tiny. Keep photos on the device. Do not add cloud upload, analytics,
+accounts, or photo-library storage.
 
 Before changing app behavior, update the affected AI Unified Process documents
 in `docs/`. Keep requirement, use-case, and test IDs stable. Run
@@ -11,9 +11,10 @@ in `docs/`. Keep requirement, use-case, and test IDs stable. Run
 
 The renderer must not access Node.js or arbitrary file paths. Expose only the
 file selection, save, model status, and progress actions through preload.
-Download only the pinned Stable ONNX model, verify its SHA-256 before use, and
-keep it in the operating system user-data folder. Never send photos to a
-network service. Keep the original file unchanged, including when saving.
+Download only the two pinned ONNX models listed in `src/shared/model.ts`.
+Verify each model's size and SHA-256 before use, and keep it in the operating
+system user-data folder. Never send photos to a network service. Keep the
+original file unchanged, including when saving.
 
 Keep model weights, `.reference/`, user photos, secrets, and build output out of
 Git and app packages. Preserve upstream license notices. Build only the

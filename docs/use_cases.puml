@@ -1,0 +1,8 @@
+@startuml
+left to right direction
+actor User
+rectangle "Alte Fotos färben" {
+  usecase "UC-001\nFoto färben und speichern" as UC001
+}
+User --> UC001
+@enduml

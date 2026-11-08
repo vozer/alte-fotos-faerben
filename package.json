@@ -6,9 +6,10 @@
   "main": "dist/main/index.js",
   "scripts": {
     "typecheck": "tsc --noEmit -p tsconfig.json",
-    "build": "tsc -p tsconfig.main.json && vite build",
+    "build": "node scripts/copy-runtime.mjs && tsc -p tsconfig.main.json && vite build",
     "test": "vitest run",
     "smoke:model": "tsx scripts/smoke-model.ts",
+    "start": "electron .",
     "package:mac": "npm run build && electron-builder --mac dmg --arm64",
     "package:win": "npm run build && electron-builder --win nsis --x64"
   },
@@ -34,7 +35,11 @@
     },
     "files": [
       "dist/**/*",
-      "package.json"
+      "package.json",
+      "docs/third-party-notices.md",
+      "docs/licenses/DeOldify-LICENSE.txt",
+      "docs/licenses/DDColor-LICENSE.txt",
+      "docs/licenses/colorize-LICENSE.txt"
     ],
     "mac": {
       "target": [

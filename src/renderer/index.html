@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="de">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="color-scheme" content="light" />
+    <title>Alte Fotos färben</title>
+  </head>
+  <body>
+    <header class="top">
+      <div>
+        <p class="eyebrow">FÜR IHRE FAMILIENFOTOS</p>
+        <h1>Alte Fotos färben</h1>
+        <p class="intro">Ein Foto auswählen, Farbe hinzufügen und eine neue Kopie speichern.</p>
+      </div>
+      <p class="privacy">Ihre Fotos bleiben auf diesem Computer.</p>
+    </header>
+
+    <main>
+      <section class="controls" aria-label="Foto bearbeiten">
+        <div class="model-choice">
+          <label for="model">Farbmodell</label>
+          <select id="model">
+            <option value="ddcolor-tiny">DDColor Tiny · mehr Farbe</option>
+            <option value="deoldify-stable">DeOldify Stable · ruhiger</option>
+          </select>
+        </div>
+        <p class="download-note">Zu wenig Farbe? Probieren Sie DDColor Tiny. Zu kräftig? Probieren Sie DeOldify Stable. Sie können dasselbe Foto vergleichen.</p>
+        <div class="primary-actions">
+          <button id="choose-photo" class="button button-primary" type="button">Foto auswählen</button>
+          <button id="colorize" class="button button-primary" type="button" disabled>Mit diesem Modell färben</button>
+          <button id="save-photo" class="button button-secondary" type="button" hidden>Farbige Kopie speichern</button>
+        </div>
+
+        <p id="file-name" class="file-name">Sie haben noch kein Foto ausgewählt.</p>
+        <p class="download-note">DeOldify Stable benötigt 873 MB. DDColor Tiny benötigt 222 MB.</p>
+
+        <div id="progress-wrap" class="progress-wrap" hidden>
+          <progress id="progress" max="100" value="0"></progress>
+          <span id="progress-label"></span>
+        </div>
+        <p id="status" class="status" role="status" aria-live="polite">Wählen Sie ein Foto aus, um zu beginnen.</p>
+      </section>
+
+      <section id="preview" class="preview" aria-label="Vorher und nachher" hidden>
+        <figure>
+          <figcaption>Vorher</figcaption>
+          <img id="original" alt="Ausgewähltes Originalfoto in Schwarz-Weiß" />
+        </figure>
+        <figure>
+          <figcaption>Nachher · <span id="result-model">noch nicht gefärbt</span></figcaption>
+          <canvas id="result" aria-label="Farbiges Foto"></canvas>
+        </figure>
+      </section>
+
+      <details id="adjustments" class="adjustments" hidden>
+        <summary>Farben anpassen</summary>
+        <div class="slider-grid">
+          <label for="intensity">Farbintensität <output id="intensity-value">100 %</output></label>
+          <input id="intensity" type="range" min="50" max="150" value="100" step="1" />
+
+          <label for="brightness">Helligkeit <output id="brightness-value">100 %</output></label>
+          <input id="brightness" type="range" min="80" max="120" value="100" step="1" />
+
+          <label for="warmth">Wärme <output id="warmth-value">Neutral</output></label>
+          <input id="warmth" type="range" min="-100" max="100" value="0" step="1" />
+          <div class="slider-ends"><span>Kühler</span><span>Wärmer</span></div>
+        </div>
+        <button id="reset-adjustments" class="button button-small" type="button">Zurücksetzen</button>
+      </details>
+    </main>
+
+    <footer>
+      <p>Funktioniert lokal. Kein Konto. Keine Cloud.</p>
+    </footer>
+    <script type="module" src="./app.ts"></script>
+  </body>
+</html>

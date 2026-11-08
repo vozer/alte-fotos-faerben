@@ -13,10 +13,13 @@ PROBE = "src/main/event.ts"
 
 class DocumentationGateTest(unittest.TestCase):
     def setUp(self):
-        # shortcut: fixture directories remain in system temp; use approved cleanup when needed.
-        self.root = Path(tempfile.mkdtemp(prefix="aiup-gate-test-"))
+        self.tempdir = tempfile.TemporaryDirectory(prefix="aiup-gate-test-")
+        self.root = Path(self.tempdir.name)
         subprocess.run(["git", "init", "-q", str(self.root)], check=True)
         subprocess.run(["git", "-C", str(self.root), "-c", "core.hooksPath=/dev/null", "-c", "commit.gpgsign=false", "-c", "user.name=Test", "-c", "user.email=test@example.invalid", "commit", "--allow-empty", "-qm", "base"], check=True)
+
+    def tearDown(self):
+        self.tempdir.cleanup()
 
     def write(self, path, contents):
         target = self.root / path

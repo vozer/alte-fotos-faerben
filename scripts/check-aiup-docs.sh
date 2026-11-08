@@ -6,7 +6,7 @@ if [[ -z "$base" || "$base" =~ ^0+$ ]]; then
   base="$(git merge-base HEAD origin/main 2>/dev/null || true)"
 fi
 if [[ -z "$base" ]]; then
-  base="$(git rev-parse HEAD^ 2>/dev/null || git rev-parse HEAD)"
+  base="$(git rev-parse --verify HEAD^ 2>/dev/null || git rev-parse HEAD)"
 fi
 if ! git cat-file -e "$base^{commit}" 2>/dev/null; then
   echo "AIUP docs gate: cannot resolve base commit '$base'." >&2
@@ -31,7 +31,7 @@ while IFS= read -r path; do
       [[ -f "$path" ]] && spec_changed=1 ;;
     docs/aiup-exceptions/*.md)
       if [[ -f "$path" ]] && ! git cat-file -e "$base:$path" 2>/dev/null && grep -Eq '^Reason: .{10,}' "$path"; then spec_changed=1; fi ;;
-    .github/workflows/*|src/*|public/*|scripts/*|tests/*|package.json|package-lock.json|vite.config.ts|tsconfig*.json)
+    .github/workflows/*|src/*|public/*|scripts/*|tests/*|package.json|package-lock.json|vite.config.*|tsconfig*.json)
       behavior_files+="  - $path\n" ;;
   esac
 done <<< "$changed_files"
