@@ -7,6 +7,13 @@ photo. It saves a separate PNG and leaves the original unchanged.
 The app supports Apple Silicon Macs and Windows 10 or 11 laptops with x64
 processors. It does not use Vercel or send photos over the internet.
 
+## Download
+
+Download v0.1.0 from [GitHub Releases](https://github.com/vozer/alte-fotos-faerben/releases/tag/v0.1.0):
+[macOS Apple Silicon installer (153 MB)](https://github.com/vozer/alte-fotos-faerben/releases/download/v0.1.0/DeOldify-macOS-arm64.dmg) or
+[Windows x64 installer (140 MB)](https://github.com/vozer/alte-fotos-faerben/releases/download/v0.1.0/DeOldify-Windows-x64-Setup.exe).
+Both installers are unsigned, so macOS or Windows may show a security warning.
+
 ## Build
 
 Use Node 26 and npm.

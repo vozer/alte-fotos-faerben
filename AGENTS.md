@@ -19,4 +19,7 @@ original file unchanged, including when saving.
 Keep model weights, `.reference/`, user photos, secrets, and build output out of
 Git and app packages. Preserve upstream license notices. Build only the
 unsigned Windows x64 installer and macOS arm64 disk image for the two private
-computers. No remote repository or Vercel deployment is configured.
+computers. The public source repository is
+https://github.com/vozer/alte-fotos-faerben, and installers are published on
+https://github.com/vozer/alte-fotos-faerben/releases. No Vercel deployment is
+configured.
