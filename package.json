@@ -1,16 +1,16 @@
 {
   "name": "alte-fotos-faerben",
-  "version": "0.1.0",
+  "version": "0.2.3",
   "private": true,
   "description": "Lokale DeOldify-Färbung für alte Fotos",
   "main": "dist/main/index.js",
   "scripts": {
     "typecheck": "tsc --noEmit -p tsconfig.json",
-    "build": "node scripts/copy-runtime.mjs && tsc -p tsconfig.main.json && vite build",
+    "build": "node scripts/copy-runtime.mjs && tsc -p tsconfig.main.json && vite build && node scripts/check-runtime-assets.mjs",
     "test": "vitest run",
     "smoke:model": "tsx scripts/smoke-model.ts",
     "start": "electron .",
-    "package:mac": "npm run build && electron-builder --mac dmg --arm64",
+    "package:mac": "npm run build && electron-builder --mac dmg --arm64 -c.productName='Alte Fotos faerben'",
     "package:win": "npm run build && electron-builder --win nsis --x64"
   },
   "dependencies": {
@@ -49,6 +49,7 @@
         }
       ],
       "identity": null,
+      "extendInfo": { "CFBundleDisplayName": "Alte Fotos färben" },
       "artifactName": "DeOldify-macOS-arm64.dmg"
     },
     "win": {
@@ -64,6 +65,7 @@
       "oneClick": false,
       "perMachine": false,
       "allowToChangeInstallationDirectory": false,
+      "deleteAppDataOnUninstall": false,
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true
     }

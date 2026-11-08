@@ -206,6 +206,7 @@ function writeLabRgba(
   b: number,
   output: Uint8ClampedArray,
   index: number,
+  alpha: number,
 ): void {
   const y = (l + 16) / 116;
   const x = y + a / 500;
@@ -216,7 +217,7 @@ function writeLabRgba(
   output[index] = gamma(3.2404542 * X - 1.5371385 * Y - 0.4985314 * Z) * 255;
   output[index + 1] = gamma(-0.969266 * X + 1.8760108 * Y + 0.041556 * Z) * 255;
   output[index + 2] = gamma(0.0556434 * X - 0.2040259 * Y + 1.0572252 * Z) * 255;
-  output[index + 3] = 255;
+  output[index + 3] = alpha;
 }
 
 function sourceLightness(image: ImageData): Float32Array {
@@ -244,9 +245,7 @@ export async function colorizeImage(bitmap: ImageBitmap, modelId: ModelId, model
   const modelSize = model.inputSize;
   const { width, height } = bitmap;
 
-  const sourceCanvas = document.createElement("canvas");
-  sourceCanvas.width = width;
-  sourceCanvas.height = height;
+  const sourceCanvas = new OffscreenCanvas(width, height);
   const sourceContext = sourceCanvas.getContext("2d", { willReadFrequently: true });
   if (!sourceContext) throw new Error("Das Foto kann nicht geöffnet werden.");
   sourceContext.drawImage(bitmap, 0, 0);
@@ -261,7 +260,7 @@ export async function colorizeImage(bitmap: ImageBitmap, modelId: ModelId, model
 
   ort.env.wasm.numThreads = 1;
   ort.env.wasm.proxy = false;
-  const runtime = new URL("runtime/", window.location.href);
+  const runtime = new URL("/runtime/", self.location.href);
   ort.env.wasm.wasmPaths = {
     mjs: new URL("ort-wasm-simd-threaded.mjs", runtime).href,
     wasm: new URL("ort-wasm-simd-threaded.wasm", runtime).href,
@@ -286,9 +285,24 @@ export async function colorizeImage(bitmap: ImageBitmap, modelId: ModelId, model
   const { a, b } = extractModelChroma(modelId, tensorData, planeSize);
   const fullA = resizePlane(a, modelSize, modelSize, width, height, "cubic");
   const fullB = resizePlane(b, modelSize, modelSize, width, height, "cubic");
-  const imageData = new Uint8ClampedArray(width * height * 4);
-  for (let i = 0, pixel = 0; pixel < lightness.length; i += 4, pixel += 1) {
-    writeLabRgba(lightness[pixel], fullA[pixel], fullB[pixel], imageData, i);
+  return labPlanesToImageData(lightness, fullA, fullB, sourcePixels.data, width, height);
+}
+
+export function labPlanesToImageData(
+  lightness: Float32Array,
+  a: Float32Array,
+  b: Float32Array,
+  sourcePixels: Uint8ClampedArray,
+  width: number,
+  height: number,
+): ImageData {
+  const pixels = width * height;
+  if (lightness.length !== pixels || a.length !== pixels || b.length !== pixels || sourcePixels.length !== pixels * 4) {
+    throw new Error("Das Foto hat ein unerwartetes Format.");
   }
-  return new ImageData(imageData, width, height);
+  const output = new Uint8ClampedArray(pixels * 4);
+  for (let pixel = 0, index = 0; pixel < pixels; pixel += 1, index += 4) {
+    writeLabRgba(lightness[pixel], a[pixel], b[pixel], output, index, sourcePixels[index + 3]);
+  }
+  return new ImageData(output, width, height);
 }

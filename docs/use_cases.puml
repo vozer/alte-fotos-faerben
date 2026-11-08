@@ -2,7 +2,11 @@
 left to right direction
 actor User
 rectangle "Alte Fotos färben" {
-  usecase "UC-001\nFoto färben und speichern" as UC001
+  usecase "UC-001\nEin Foto vergleichen, bearbeiten und speichern" as UC001
+  usecase "UC-002\nBis zu 20 Fotos vergleichen und speichern" as UC002
+  usecase "UC-003\nWindows-App aktualisieren" as UC003
 }
 User --> UC001
+User --> UC002
+User --> UC003
 @enduml

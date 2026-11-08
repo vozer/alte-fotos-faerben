@@ -11,63 +11,126 @@
       <div>
         <p class="eyebrow">FÜR IHRE FAMILIENFOTOS</p>
         <h1>Alte Fotos färben</h1>
-        <p class="intro">Ein Foto auswählen, Farbe hinzufügen und eine neue Kopie speichern.</p>
+        <p class="intro">Bis zu 20 Fotos auswählen, zwei Ergebnisse vergleichen und die schönsten speichern.</p>
       </div>
       <p class="privacy">Ihre Fotos bleiben auf diesem Computer.</p>
     </header>
 
     <main>
-      <section class="controls" aria-label="Foto bearbeiten">
-        <div class="model-choice">
-          <label for="model">Farbmodell</label>
-          <select id="model">
-            <option value="ddcolor-tiny">DDColor Tiny · mehr Farbe</option>
-            <option value="deoldify-stable">DeOldify Stable · ruhiger</option>
-          </select>
-        </div>
-        <p class="download-note">Zu wenig Farbe? Probieren Sie DDColor Tiny. Zu kräftig? Probieren Sie DeOldify Stable. Sie können dasselbe Foto vergleichen.</p>
+      <section class="controls" aria-label="Fotos bearbeiten">
         <div class="primary-actions">
-          <button id="choose-photo" class="button button-primary" type="button">Foto auswählen</button>
-          <button id="colorize" class="button button-primary" type="button" disabled>Mit diesem Modell färben</button>
-          <button id="save-photo" class="button button-secondary" type="button" hidden>Farbige Kopie speichern</button>
+          <button id="choose-photos" class="button button-primary" type="button" title="Wählen Sie bis zu 20 JPEG- oder PNG-Fotos aus.">Fotos auswählen</button>
+          <button id="start-batch" class="button button-primary" type="button" title="Färbt jedes Foto mit beiden Modellen." disabled>Beide Modelle starten</button>
+          <button id="cancel-batch" class="button button-secondary" type="button" title="Beendet beide Versuche für das aktuelle Foto und stoppt danach." hidden>Nach diesem Foto anhalten</button>
+          <button id="save-one" class="button button-secondary" type="button" title="Speichert das ausgewählte Ergebnis des geöffneten Fotos als PNG." disabled>Ausgewählte Kopie speichern</button>
+          <button id="save-all" class="button button-secondary" type="button" title="Öffnet die Auswahl der Fotos, die Sie gemeinsam speichern möchten." disabled>Mehrere speichern</button>
+          <button id="close-batch" class="button button-small" type="button" title="Schließt den Fotostapel und löscht seine temporären Ergebnisse." hidden>Fotostapel schließen</button>
         </div>
-
-        <p id="file-name" class="file-name">Sie haben noch kein Foto ausgewählt.</p>
-        <p class="download-note">DeOldify Stable benötigt 873 MB. DDColor Tiny benötigt 222 MB.</p>
+        <p class="controls-help">Beide Modelle starten färbt jedes Foto zweimal. Mehrere speichern öffnet eine Fotoliste. Fotostapel schließen löscht die temporären Ergebnisse.</p>
+        <p id="batch-count" class="file-name">Wählen Sie bis zu 20 Fotos aus.</p>
+        <p class="download-note">DeOldify Stable ist ruhiger. DDColor Tiny zeigt oft mehr Farbe. Beide Ergebnisse bleiben getrennt.</p>
+        <p class="download-note">Beim ersten Start brauchen Sie Internet. Danach funktionieren die Modelle offline.</p>
 
         <div id="progress-wrap" class="progress-wrap" hidden>
           <progress id="progress" max="100" value="0"></progress>
           <span id="progress-label"></span>
         </div>
-        <p id="status" class="status" role="status" aria-live="polite">Wählen Sie ein Foto aus, um zu beginnen.</p>
+        <p id="status" class="status" role="status" aria-live="polite">Wählen Sie Fotos aus, um zu beginnen.</p>
       </section>
 
-      <section id="preview" class="preview" aria-label="Vorher und nachher" hidden>
-        <figure>
-          <figcaption>Vorher</figcaption>
-          <img id="original" alt="Ausgewähltes Originalfoto in Schwarz-Weiß" />
-        </figure>
-        <figure>
-          <figcaption>Nachher · <span id="result-model">noch nicht gefärbt</span></figcaption>
-          <canvas id="result" aria-label="Farbiges Foto"></canvas>
-        </figure>
+      <section id="batch-view" class="batch-view" hidden aria-label="Fotostapel">
+        <div id="photo-list" class="photo-list" aria-live="polite"></div>
+
+        <section id="editor" class="editor" hidden aria-label="Ein Ergebnis bearbeiten">
+          <div class="editor-heading">
+            <div>
+              <h2 id="editor-title">Ergebnis bearbeiten</h2>
+              <p id="editor-subtitle" class="download-note"></p>
+            </div>
+            <div class="editor-actions">
+              <button id="choose-result" class="button button-primary" type="button" title="Bestätigt dieses Modell als Ergebnis für das Foto und schließt den Editor.">Bestätigen</button>
+              <button id="reset-adjustments" class="button button-small" type="button" title="Setzt die Farbregler auf ihre Ausgangswerte zurück.">Zurücksetzen</button>
+            </div>
+          </div>
+          <div class="editor-layout">
+            <div class="preview" aria-label="Bearbeitetes Foto">
+              <figure>
+                <figcaption>Farbiges Ergebnis</figcaption>
+                <div class="zoom-controls" aria-label="Bildgröße">
+                  <button id="zoom-out" class="button button-small" type="button" title="Ansicht verkleinern" aria-label="Ansicht verkleinern">−</button>
+                  <button id="zoom-reset" class="button button-small" type="button" title="Ansicht einpassen" aria-label="Ansicht einpassen">Einpassen</button>
+                  <button id="zoom-in" class="button button-small" type="button" title="Ansicht vergrößern" aria-label="Ansicht vergrößern">+</button>
+                  <output id="zoom-value">100 %</output>
+                </div>
+                <div class="photo-viewport"><img id="editor-result" alt="Vorschau des bearbeiteten Ergebnisses" /></div>
+              </figure>
+            </div>
+            <section id="adjustments" class="adjustments" aria-label="Farben anpassen">
+              <h3>Farben anpassen</h3>
+              <fieldset class="levels">
+                <legend>Tonwertkorrektur</legend>
+                <label for="black-point">Schwarzpunkt <output id="black-point-value">0</output></label>
+                <input id="black-point" type="range" min="0" max="64" value="0" step="1" />
+                <label for="midtone">Mitteltöne <output id="midtone-value">1,00</output></label>
+                <input id="midtone" type="range" min="0.5" max="2" value="1" step="0.01" />
+                <label for="white-point">Weißpunkt <output id="white-point-value">255</output></label>
+                <input id="white-point" type="range" min="191" max="255" value="255" step="1" />
+              </fieldset>
+            <div class="basic-grid">
+              <label for="intensity">Farbintensität <output id="intensity-value">100 %</output></label>
+              <input id="intensity" type="range" min="50" max="150" value="100" step="1" />
+
+              <label for="brightness">Helligkeit <output id="brightness-value">100 %</output></label>
+              <input id="brightness" type="range" min="80" max="120" value="100" step="1" />
+
+              <label for="warmth">Wärme <output id="warmth-value">Neutral</output></label>
+              <input id="warmth" type="range" min="-100" max="100" value="0" step="1" />
+              <div class="slider-ends"><span>Kühler</span><span>Wärmer</span></div>
+
+              <label for="hue">Farbton <output id="hue-value">0°</output></label>
+              <input id="hue" type="range" min="-180" max="180" value="0" step="1" />
+              <div class="slider-ends"><span>−180°</span><span>+180°</span></div>
+            </div>
+
+            <div class="advanced-grid">
+              <section class="curve-tools" aria-label="Farbkurven">
+                <label for="curve-channel">Kurve bearbeiten</label>
+                <select id="curve-channel">
+                  <option value="master">Alle Farben</option>
+                  <option value="red">Rot</option>
+                  <option value="green">Grün</option>
+                  <option value="blue">Blau</option>
+                </select>
+                <svg id="curve-graph" viewBox="0 0 256 256" role="group" aria-label="Farbkurve. Punkte mit Maus, Touch oder Pfeiltasten bewegen.">
+                  <path class="curve-grid" d="M0 0H256M0 64H256M0 128H256M0 192H256M0 255H256M0 0V256M64 0V256M128 0V256M192 0V256M255 0V256" />
+                  <path id="curve-line" class="curve-line" d="M0 255L64 191L128 127L192 63L255 0" />
+                  <g id="curve-points"></g>
+                </svg>
+                <p class="curve-help">Punkt wählen. Mit den Pfeiltasten ändern Sie die Farbe.</p>
+              </section>
+
+              <figure class="histogram">
+                <figcaption>RGB-Histogramm</figcaption>
+                <canvas id="histogram" width="512" height="160" role="img" aria-label="Histogramm für Rot, Grün und Blau"></canvas>
+                <p id="histogram-description" class="download-note">Wählen Sie ein Ergebnis aus.</p>
+                <div class="histogram-legend"><span>Rot</span><span>Grün</span><span>Blau</span></div>
+              </figure>
+            </section>
+          </div>
+        </section>
       </section>
 
-      <details id="adjustments" class="adjustments" hidden>
-        <summary>Farben anpassen</summary>
-        <div class="slider-grid">
-          <label for="intensity">Farbintensität <output id="intensity-value">100 %</output></label>
-          <input id="intensity" type="range" min="50" max="150" value="100" step="1" />
-
-          <label for="brightness">Helligkeit <output id="brightness-value">100 %</output></label>
-          <input id="brightness" type="range" min="80" max="120" value="100" step="1" />
-
-          <label for="warmth">Wärme <output id="warmth-value">Neutral</output></label>
-          <input id="warmth" type="range" min="-100" max="100" value="0" step="1" />
-          <div class="slider-ends"><span>Kühler</span><span>Wärmer</span></div>
+      <section id="save-selection" class="save-selection" hidden aria-label="Fotos zum Speichern auswählen">
+        <div class="save-selection-card">
+          <h2>Welche Fotos möchten Sie speichern?</h2>
+          <p>Die Häkchen zeigen Fotos mit ausgewähltem Ergebnis. Sie können einzelne Fotos abwählen.</p>
+          <div id="save-selection-list" class="save-selection-list"></div>
+          <div class="editor-actions">
+            <button id="confirm-save-selection" class="button button-primary" type="button">Auswahl speichern</button>
+            <button id="cancel-save-selection" class="button button-small" type="button">Abbrechen</button>
+          </div>
         </div>
-        <button id="reset-adjustments" class="button button-small" type="button">Zurücksetzen</button>
-      </details>
+      </section>
     </main>
 
     <footer>

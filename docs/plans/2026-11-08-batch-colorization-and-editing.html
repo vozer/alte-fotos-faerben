@@ -1,0 +1,261 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="icon" href="data:,">
+  <title>Batch colorization and editing plan</title>
+  <style>
+    :root { color-scheme: light dark; font: 16px/1.55 system-ui, sans-serif; }
+    body { max-width: 650px; margin: 2.5rem auto; padding: 0 1.25rem 3rem; }
+    h1, h2, h3 { line-height: 1.2; }
+    h1 { font-size: clamp(1.8rem, 8vw, 2.4rem); }
+    h2 { margin-top: 2.2rem; }
+    h3 { margin-top: 1.4rem; }
+    p, li, td { overflow-wrap: anywhere; }
+    a { overflow-wrap: anywhere; }
+    code, pre { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+    code { overflow-wrap: anywhere; }
+    pre { overflow-x: auto; max-width: 100%; padding: .8rem; border: 1px solid #8886; border-radius: .55rem; background: #8881; }
+    .summary, .callout { padding: .8rem 1rem; border-left: 4px solid #d99b20; background: #8881; }
+    .summary { font-size: 1.08rem; }
+    .card { margin: 1rem 0; padding: .2rem 1rem 1rem; border: 1px solid #8885; border-radius: .7rem; }
+    .muted { opacity: .82; }
+    li { margin: .35rem 0; }
+    table { width: 100%; border-collapse: collapse; table-layout: fixed; }
+    th, td { padding: .55rem; border: 1px solid #8885; text-align: left; vertical-align: top; }
+    th { background: #8882; }
+    @media (max-width: 650px) {
+      body { margin: 1rem auto; padding: 0 1rem 2rem; }
+      .card { padding: .2rem .8rem .8rem; }
+      table, tbody, tr, td { display: block; width: 100%; }
+      thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0, 0, 0, 0); }
+      tr { margin: .8rem 0; border: 1px solid #8885; border-radius: .55rem; overflow: hidden; }
+      td { display: grid; grid-template-columns: minmax(5.5rem, 34%) minmax(0, 1fr); gap: .5rem; border: 0; border-bottom: 1px solid #8884; }
+      td:last-child { border-bottom: 0; }
+      td::before { content: attr(data-label); font-weight: 700; }
+      pre { font-size: .82rem; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Batch colorization and editing</h1>
+    <p class="summary">Plan: select up to 20 JPEG or PNG photos. Run Stable and Tiny on each photo. Edit both results separately, choose one per photo, then save one or all.</p>
+    <p><strong>Status:</strong> version 0.2.3 installers are built locally. A corrected Mac build opened on the target Mac. Windows update and offline use still need testing. The research record is <a href="../research/deoldify-batch-editing-2026-11-08.md">here</a>.</p>
+  </header>
+
+  <section>
+    <h2>1. Goal and scope</h2>
+    <p>The same German app should handle one photo or a batch. A candidate is one model's colorized result for one photo.</p>
+    <ul>
+      <li>Select 1 to 20 JPEG or PNG photos in one native file picker. Reject a larger selection as a whole.</li>
+      <li>Run DeOldify Stable and DDColor Tiny on every selected photo, one photo at a time.</li>
+      <li>Edit each candidate independently. Choose a winner for each photo.</li>
+      <li>Save one chosen result or save all chosen results to one folder.</li>
+      <li>Keep photo bytes on this computer. Clear temporary candidates when the batch closes.</li>
+      <li>Keep the 24-megapixel and 250 MB per-photo limits. Keep the two pinned models and PNG output.</li>
+      <li>Install the new Windows version over the existing app and reuse its downloaded models.</li>
+      <li>Keep large, plain German controls. Put advanced tools behind a closed-by-default section.</li>
+    </ul>
+    <p class="callout">No database, cloud upload, Vercel deployment, new model, new image format, photo library, or third-party editing package is in scope.</p>
+  </section>
+
+  <section>
+    <h2>2. Current state</h2>
+    <p>Before these plan files, the branch was clean at <code>8b53567</code>. The app stores one photo in <a href="../../src/renderer/app.ts#L31">app.ts</a> and one path per window in <a href="../../src/main/index.ts#L15">main/index.ts</a>.</p>
+    <p>The native picker opens one file at <a href="../../src/main/index.ts#L96">main/index.ts</a>. The renderer then checks the 24-megapixel limit at <a href="../../src/renderer/app.ts#L124">app.ts</a>.</p>
+    <p>The runtime releases its active session when the model changes at <a href="../../src/renderer/colorizer.ts#L269">colorizer.ts</a>. This saves memory, but paired results reload models.</p>
+    <p><a href="../../src/renderer/adjustments.ts#L1">adjustments.ts</a> supports intensity, brightness, and warmth. <a href="../../src/renderer/app.ts#L204">app.ts</a> encodes one PNG for <a href="../../src/main/index.ts#L132">main/index.ts</a> to save.</p>
+    <p>The existing AIUP specifications describe one photo and one model result. Update them before changing app behavior. Keep their current IDs stable.</p>
+  </section>
+
+  <section>
+    <h2>3. Recommended design</h2>
+    <div class="card">
+      <h3>Photo and model queue</h3>
+      <ol>
+        <li>The native picker returns photo names and opaque IDs. Main keeps each file path.</li>
+        <li>Main rejects selections above 20 before reading any full image. It validates file type and the existing byte cap.</li>
+        <li>The app downloads each missing model once, verifies its size and checksum, and shows progress.</li>
+        <li>The queue loads one photo, runs Stable, saves its candidate locally, then runs Tiny and saves that candidate.</li>
+        <li>The queue closes image buffers before starting the next photo. It keeps only one model session active.</li>
+        <li>If a candidate fails, the app marks it and continues. The user can retry that photo and model later.</li>
+        <li>Cancel finishes both model runs for the current photo, then stops before the next photo.</li>
+      </ol>
+      <p>If one model download fails, mark that model unavailable for this batch. Continue with the ready model and offer retry after processing.</p>
+      <p>If one candidate succeeds and the other fails, allow the user to choose the ready candidate. Keep the failed candidate available for retry.</p>
+      <p>Run inference and large pixel operations in a worker. Keep progress, editing, and Cancel responsive. Finish both attempts for the current photo before stopping.</p>
+      <p>Handle cancellation during model downloads and failed attempts explicitly. Keep completed candidates and mark unfinished candidates for retry.</p>
+      <p>The current runtime already holds one model session at a time. This limits memory use on both laptops. It can reload large models often, so the app must show clear progress.</p>
+    </div>
+    <div class="card">
+      <h3>Photo list, comparison, and editor</h3>
+      <p>The batch list shows the original thumbnail, each model's status, and both candidate previews. Selecting a photo opens its full preview and simple controls to switch between Stable and Tiny.</p>
+      <p>Label Stable <em>ruhiger, empfohlen</em> and Tiny <em>mehr Farbe</em>. Require a separate winner choice for each photo after review.</p>
+      <p>Each candidate keeps its own edit settings. Show an RGB histogram and these tools in a closed-by-default <em>Weitere Farbeinstellungen</em> section:</p>
+      <ul>
+        <li>Keep <em>Farbintensität</em>, <em>Helligkeit</em>, and <em>Wärme</em>.</li>
+        <li>Add <em>Farbton</em> and <em>Tonwertkorrektur</em> for black point, midtones, and white point.</li>
+        <li>Add a master curve and separate <em>Rot</em>, <em>Grün</em>, and <em>Blau</em> curves.</li>
+        <li>Label tools in plain German. Make curve points usable by mouse, touch, and keyboard.</li>
+      </ul>
+      <p>Edits change only the preview and saved copy. They never rerun either model. Reset returns the current candidate to its original output.</p>
+      <p>Use the same adjustment calculations for the preview and full-resolution export. Preserve image orientation and PNG transparency through colorization and export.</p>
+      <p>Reuse the current palette and button sizes. Keep the present 20-pixel base text and 58-pixel buttons. Check keyboard use, contrast, and 200% text zoom.</p>
+    </div>
+    <div class="card">
+      <h3>Saving and temporary data</h3>
+      <p>Individual save keeps the current native save dialog and PNG format. The system asks before replacing an existing output. Bulk save opens one folder picker and saves only chosen candidates.</p>
+      <p>Use <code>&lt;original-name&gt;-farbig.png</code> as the bulk base name. Add <code>-2</code>, <code>-3</code>, and later suffixes when a name exists. Never overwrite a source or saved file during bulk save.</p>
+      <p>Bulk save includes only photos with a chosen result. Report rows that still need a choice.</p>
+      <p>Compare each output with every batch original. Account for aliases, case differences, and hard links. Reject any output that could replace an original.</p>
+      <p>Write each output to a temporary file in the destination folder. Publish it only after the write succeeds. Use exclusive creation for bulk names and handle collisions again at publication.</p>
+      <p>Report saved, skipped, and failed photos separately. Keep failed candidates available for retry. Clean up only temporary files created by the app.</p>
+      <p>Main owns the temporary batch directory, selected paths, and output writes. The renderer sees opaque IDs and transfers only one photo or candidate at a time.</p>
+      <p>Show a confirmation before closing a batch with unsaved work. Remove temporary files on batch close, window close, and app exit. Remove stale app-owned directories on the next launch after a crash.</p>
+      <p>Keep the current batch until a replacement selection passes validation and the user confirms discarding unsaved work.</p>
+    </div>
+    <div class="card">
+      <h3>Windows update</h3>
+      <p>Increase the app version and build an unsigned Windows x64 installer that updates the existing installation. Preserve the app ID, product name, install scope, and user-data location.</p>
+      <p>Keep both cached model files during installation and updates. Check their existing sizes and checksums before reuse. Download a model only if its cache is missing or invalid.</p>
+      <p>Close the app before installing the update. Reopen it afterward and process photos offline with both cached models.</p>
+    </div>
+    <details>
+      <summary>Proposed renderer state</summary>
+      <p>This state keeps candidate edits independent. Main owns all file paths and temporary storage.</p>
+      <pre><code>import type { ModelId } from "../shared/model";
+import type { Adjustments } from "./adjustments";
+
+export interface BatchPhoto {
+  id: string;
+  name: string;
+  status: "queued" | "processing" | "ready" | "partial" | "failed";
+  selectedModel?: ModelId;
+  candidates: Record&lt;ModelId, {
+    status: "pending" | "running" | "ready" | "failed";
+    adjustments: Adjustments;
+    errorMessage?: string;
+  }&gt;;
+}</code></pre>
+    </details>
+    <p class="muted">Electron supports multi-file and directory dialogs. Canvas pixel APIs support histograms and image edits. The source links and exact evidence are in the <a href="../research/deoldify-batch-editing-2026-11-08.md">research record</a>.</p>
+  </section>
+
+  <section>
+    <h2>4. Execution order</h2>
+    <table>
+      <thead><tr><th>Order</th><th>Task</th><th>Work</th><th>Depends on</th><th>Risk</th></tr></thead>
+      <tbody>
+        <tr><td data-label="Order">1</td><td data-label="Task">Update specifications</td><td data-label="Work">Updated requirements, use cases, entity model, diagram, and test cases. Kept existing IDs stable. Added batch limits, cancellation, retry, editing, save, cleanup, and Windows update rules.</td><td data-label="Depends on">Approval received</td><td data-label="Risk">Low</td></tr>
+        <tr><td data-label="Order">2</td><td data-label="Task">Add local file operations</td><td data-label="Work">Added multi-select and folder dialogs. Validate IDs, source type, byte caps, and PNG writes. Added private temporary batch storage and cleanup. Main keeps file paths.</td><td data-label="Depends on">1</td><td data-label="Risk">Medium</td></tr>
+        <tr><td data-label="Order">3</td><td data-label="Task">Build the queue</td><td data-label="Work">Added a batch module and worker. Run both models per photo. Continue after failures. Retry one failed candidate. Finish the current photo pair when canceled.</td><td data-label="Depends on">2</td><td data-label="Risk">Medium</td></tr>
+        <tr><td data-label="Order">4</td><td data-label="Task">Add editing and selection</td><td data-label="Work">Added a dedicated editing view. The image stays beside visible Tonwertkorrektur and color controls. Candidate settings remain independent.</td><td data-label="Depends on">3</td><td data-label="Risk">Medium</td></tr>
+        <tr><td data-label="Order">5</td><td data-label="Task">Add saving and close flow</td><td data-label="Work">Added single and bulk PNG saves, collision-safe names, unsaved-work confirmation, and temporary data cleanup.</td><td data-label="Depends on">2, 4</td><td data-label="Risk">Medium</td></tr>
+        <tr><td data-label="Order">6</td><td data-label="Task">Validate and package</td><td data-label="Work">Both 0.2.3 installers are built. The corrected Mac app opened. Windows laptop update and offline use still need validation.</td><td data-label="Depends on">1–5</td><td data-label="Risk">High</td></tr>
+      </tbody>
+    </table>
+    <p>The project already uses <code>docs/use_cases.puml</code>. Keep that PlantUML format and follow the <code>plantuml-validation</code> skill when updating it.</p>
+  </section>
+
+  <section>
+    <h2>5. Files to change</h2>
+    <ul>
+      <li>Updated AI Unified Process requirements, use cases, entity model, diagram, and test cases. Added Windows update requirements and test cases.</li>
+      <li>Updated the main process, preload bridge, shared model types, and renderer for batches, local editing, saving, and cleanup.</li>
+      <li>Added a photo worker and worker client. Added focused tests for batches, cache reuse, startup cleanup, packaging, and worker recovery.</li>
+      <li>Updated the German install guide and README. Windows updates retain the existing app identity, user data, and cached models.</li>
+    </ul>
+    <p>No package dependency or model change is planned. The model catalog remains in <code>src/shared/model.ts</code>.</p>
+  </section>
+
+  <section>
+    <h2>6. Acceptance and checks</h2>
+    <ul>
+      <li>Selecting 20 valid photos succeeds. Selecting 21 rejects the whole selection and leaves the open batch intact.</li>
+      <li>Each valid photo receives both model runs. A failed photo or model candidate does not stop later work.</li>
+      <li>Cancel completes the current photo's Stable and Tiny attempts. It starts no next photo and keeps all completed files.</li>
+      <li>Progress and Cancel stay responsive during inference, pixel processing, and model downloads.</li>
+      <li>Retry reruns only the failed photo and model candidate. It does not rerun successful candidates.</li>
+      <li>Each candidate retains its own settings. Neutral settings reproduce its model output. Edits do not rerun inference.</li>
+      <li>Hue, levels, channel curves, histogram labels, reset, and keyboard curve controls work on the maximum allowed image size.</li>
+      <li>Users can choose a winner for each photo. Individual and bulk saves create PNGs and leave source files unchanged.</li>
+      <li>Bulk save includes only selected winners and reports photos without a winner.</li>
+      <li>Bulk save asks for one folder, uses unique names, and reports every saved or failed file.</li>
+      <li>Saving cannot replace any batch original through aliases, hard links, or case differences. Interrupted writes never appear as completed PNGs.</li>
+      <li>Preview and full-resolution export use the same adjustments. Neutral output, orientation, and PNG transparency remain correct.</li>
+      <li>Invalid replacement selections leave the open batch intact. Closing unsaved work requires confirmation.</li>
+      <li>Closing the batch removes only app-owned temporary files. Startup removes only stale directories under its own temporary root.</li>
+      <li>No photo data or path is sent to a network. Both cached models work offline.</li>
+      <li>Install the new Windows package over the previous version with both models cached. Compare their sizes and checksums before and after the update. Confirm no model download occurs.</li>
+      <li>After updating, disconnect the Windows laptop from the internet. Run both models on a photo and save a result.</li>
+      <li>With one missing or invalid cached model, download only that model and verify its size and checksum before use.</li>
+    </ul>
+    <p>From <code>deoldify-desktop/</code>, run:</p>
+    <pre><code>bash scripts/check-aiup-docs.sh
+python3 -B -m unittest discover -s tests -p 'test_aiup_docs_gate.py'
+npm run typecheck
+npm test
+npm run build
+npm run smoke:model
+npm run package:mac
+npm run package:win</code></pre>
+    <p>Passed locally: 37 JavaScript tests; 14 AIUP documentation tests; type checks; the production build; installer archive checks; and a corrected Mac app launch.</p>
+    <ul>
+      <li><a href="https://github.com/vozer/alte-fotos-faerben/releases/download/v0.2.3/DeOldify-macOS-arm64.dmg">Unsigned macOS arm64 installer, version 0.2.3</a> (156 MiB).</li>
+      <li><a href="https://github.com/vozer/alte-fotos-faerben/releases/download/v0.2.3/DeOldify-Windows-x64-Setup.exe">Unsigned Windows x64 installer, version 0.2.3</a> (143 MiB).</li>
+    </ul>
+    <p>Both cached model files match their configured SHA-256 hashes. The Stable model smoke check passed. A standalone Tiny smoke script was not run; a fresh Tiny worker inference returned a candidate image.</p>
+    <p>The corrected Mac build opened on the target Mac. The final build also passed the graphics startup check while another instance was open. Installing from the DMG remains unverified.</p>
+    <p>Install the Windows package over the existing version on the target laptop. Verify both cached model files remain unchanged, then disconnect the internet and run both models. Measure runtime, memory, and a 20-photo batch on both target laptops.</p>
+    <p>The local PlantUML renderer returned HTTP 404 for both the project diagram and a minimal validation example. No public renderer was used, so visual diagram validation remains pending.</p>
+  </section>
+
+  <section>
+    <h2>7. Risks, safeguards, and rollback</h2>
+    <ul>
+      <li>Stable took over 30 seconds for one portrait in the prior app check. Two models across 20 photos can take a long time. Show the current photo and model at all times.</li>
+      <li>Temporary results need disk space. If a write fails, mark that candidate, keep completed results, and continue with other candidates.</li>
+      <li>Available disk space can change during a run. Handle full disks and interrupted writes without losing completed results or replacing existing files.</li>
+      <li>The Windows laptop's RAM and runtime speed are unknown. Keep one model session active and record device validation separately.</li>
+      <li>Keep the existing context isolation, sandbox, CSP, IPC sender checks, PNG signature checks, 24-megapixel cap, and original-file protection.</li>
+      <li>Do not include photo bytes, file paths, or family-photo names in logs. Do not add network calls for photos.</li>
+    </ul>
+    <p>No database migration is needed. To roll back a committed feature, review its exact commit and run <code>git revert &lt;feature-commit-hash&gt;</code>. Keep generated installers outside Git.</p>
+  </section>
+
+  <section>
+    <h2>8. Implementation review checklist</h2>
+    <p><strong>Senior Code Review</strong></p>
+    <ul>
+      <li>[ ] Follows existing code patterns in codebase</li>
+      <li>[ ] No unnecessary complexity</li>
+      <li>[ ] Edge cases handled</li>
+      <li>[ ] Error handling present</li>
+      <li>[ ] Logging added where appropriate</li>
+    </ul>
+    <p><strong>Code Simplification</strong></p>
+    <ul>
+      <li>[ ] No code duplication (uses existing utilities)</li>
+      <li>[ ] Single responsibility per function</li>
+      <li>[ ] Clear variable/function names</li>
+      <li>[ ] Minimal changes to achieve goal</li>
+    </ul>
+    <p><strong>Security Audit</strong></p>
+    <ul>
+      <li>[ ] No SQL injection vulnerabilities; no SQL exists in this app</li>
+      <li>[ ] No exposed secrets or credentials</li>
+      <li>[ ] Input validation present</li>
+      <li>[ ] No PII exposure</li>
+      <li>[ ] Rate limiting considered; no remote photo endpoint exists</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>Review handoff</h2>
+    <p>The implementation and local installers are ready for hands-on testing. The development app remains open on this Mac.</p>
+    <p class="muted">All source and documentation changes are local and uncommitted. No installer has been uploaded. No commit, push, release, or production deployment occurred. No Vercel project is configured.</p>
+  </section>
+</body>
+</html>

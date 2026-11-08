@@ -1,25 +1,36 @@
 import { describe, expect, it } from "vitest";
-import { adjustmentPlan, defaultAdjustments } from "../src/renderer/adjustments";
+import { adjustPixels, defaultAdjustments, histogram } from "../src/renderer/adjustments";
 
 describe("photo adjustments", () => {
-  it("keeps the Stable result unchanged at neutral values", () => {
-    expect(adjustmentPlan(defaultAdjustments)).toEqual({
-      filter: "none",
-      overlay: null,
-    });
+  it("preserves every pixel and alpha at neutral settings", () => {
+    const source = new Uint8ClampedArray([255, 22, 3, 127, 0, 0, 0, 0]);
+    expect([...adjustPixels(source, defaultAdjustments)]).toEqual([...source]);
   });
 
-  it("limits values to the German slider ranges", () => {
-    expect(adjustmentPlan({ intensity: 500, brightness: 0, warmth: 500 })).toEqual({
-      filter: "saturate(1.5) brightness(0.8)",
-      overlay: { color: "rgba(255, 145, 55, 1)", alpha: 0.24 },
-    });
+  it("rotates hue without changing transparency", () => {
+    const source = new Uint8ClampedArray([255, 0, 0, 127]);
+    expect([...adjustPixels(source, { ...defaultAdjustments, hue: 120 })]).toEqual([0, 255, 0, 127]);
   });
 
-  it("uses a cool overlay for values below neutral", () => {
-    expect(adjustmentPlan({ intensity: 100, brightness: 100, warmth: -50 }).overlay).toEqual({
-      color: "rgba(55, 130, 255, 1)",
-      alpha: 0.12,
-    });
+  it("applies black and white points to the expected range", () => {
+    const source = new Uint8ClampedArray([50, 128, 230, 255]);
+    const result = adjustPixels(source, { ...defaultAdjustments, blackPoint: 64, whitePoint: 200 });
+    expect([...result]).toEqual([0, 120, 255, 255]);
+  });
+
+  it("applies the selected channel curve independently", () => {
+    const source = new Uint8ClampedArray([64, 64, 64, 255]);
+    const adjustments = structuredClone(defaultAdjustments);
+    adjustments.curves.red = [0, 128, 128, 192, 255];
+    expect([...adjustPixels(source, adjustments)]).toEqual([128, 64, 64, 255]);
+  });
+
+  it("counts RGB values in the histogram without counting alpha", () => {
+    const result = histogram(new Uint8ClampedArray([0, 128, 255, 0, 255, 0, 0, 255]));
+    expect(result.red.reduce((sum, count) => sum + count, 0)).toBe(2);
+    expect(result.green.reduce((sum, count) => sum + count, 0)).toBe(2);
+    expect(result.blue.reduce((sum, count) => sum + count, 0)).toBe(2);
+    expect(result.red[0]).toBe(1);
+    expect(result.red.at(-1)).toBe(1);
   });
 });

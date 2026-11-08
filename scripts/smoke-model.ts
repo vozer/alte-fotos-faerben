@@ -3,11 +3,12 @@ import { readFile, stat } from "node:fs/promises";
 import { resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 import * as ort from "onnxruntime-web/wasm";
-import { MODEL_BYTES, MODEL_SHA256 } from "../src/shared/model";
+import { MODEL_CATALOG } from "../src/shared/model";
 
 async function main(): Promise<void> {
-  const modelPath = resolve(".cache/deoldify_stable.onnx");
-  if ((await stat(modelPath)).size !== MODEL_BYTES) throw new Error("Stable model size does not match.");
+  const model = MODEL_CATALOG["deoldify-stable"];
+  const modelPath = resolve(process.env.DEOLDIFY_STABLE_MODEL ?? `.cache/${model.fileName}`);
+  if ((await stat(modelPath)).size !== model.bytes) throw new Error("Stable model size does not match.");
 
   const files = resolve("node_modules/onnxruntime-web/dist");
   ort.env.wasm.numThreads = 1;
@@ -16,7 +17,7 @@ async function main(): Promise<void> {
     wasm: pathToFileURL(resolve(files, "ort-wasm-simd-threaded.wasm")).href,
   };
   const bytes = await readFile(modelPath);
-  if (createHash("sha256").update(bytes).digest("hex") !== MODEL_SHA256) {
+  if (createHash("sha256").update(bytes).digest("hex") !== model.sha256) {
     throw new Error("Stable model checksum does not match.");
   }
 

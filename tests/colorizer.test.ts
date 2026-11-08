@@ -1,5 +1,5 @@
-import { describe, expect, it } from "vitest";
-import { extractModelChroma, labToRgb, resizePlane, rgbToLab } from "../src/renderer/colorizer";
+import { describe, expect, it, vi } from "vitest";
+import { extractModelChroma, labPlanesToImageData, labToRgb, resizePlane, rgbToLab } from "../src/renderer/colorizer";
 
 describe("DeOldify color pipeline", () => {
   it("converts neutral black and white to Lab lightness", () => {
@@ -35,5 +35,24 @@ describe("DeOldify color pipeline", () => {
     const result = extractModelChroma("deoldify-stable", new Float32Array([1, 0, 0]), 1);
     expect(result.a[0]).toBeCloseTo(80, 0);
     expect(result.b[0]).toBeCloseTo(67, 0);
+  });
+
+  it("preserves source transparency when rebuilding model output", () => {
+    vi.stubGlobal("ImageData", class {
+      constructor(public data: Uint8ClampedArray, public width: number, public height: number) {}
+    });
+    try {
+      const result = labPlanesToImageData(
+        new Float32Array([50, 50]),
+        new Float32Array([0, 0]),
+        new Float32Array([0, 0]),
+        new Uint8ClampedArray([10, 20, 30, 0, 10, 20, 30, 127]),
+        2,
+        1,
+      );
+      expect([...result.data.filter((_value: number, index: number) => index % 4 === 3)]).toEqual([0, 127]);
+    } finally {
+      vi.unstubAllGlobals();
+    }
   });
 });

@@ -2,11 +2,22 @@
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   color: #202824;
   background: #f5f2eb;
-  font-size: 20px;
+  font-size: 16px;
   line-height: 1.45;
   font-synthesis: none;
   text-rendering: optimizeLegibility;
 }
+
+body { max-width: 1440px; padding: 20px 24px 16px; }
+.top { padding-bottom: 16px; }
+h1 { font-size: clamp(28px, 3vw, 38px); }
+.intro { margin-top: 6px; font-size: 17px; }
+main { padding-top: 16px; }
+.controls { padding: 16px; border-width: 1px; border-radius: 12px; }
+.primary-actions { gap: 8px; }
+.button { min-height: 44px; padding: 8px 14px; border-radius: 8px; font-size: 15px; }
+.file-name { margin-top: 12px; font-size: 16px; }
+.download-note, .status { font-size: 14px; }
 
 * { box-sizing: border-box; }
 body { max-width: 1260px; margin: 0 auto; padding: 32px 36px 24px; }
@@ -41,8 +52,8 @@ figure img { height: 52vh; }
 figure canvas { height: 52vh; }
 .adjustments { margin-top: 20px; padding: 18px 22px; border: 2px solid #ddd7c9; border-radius: 16px; background: #fffefa; }
 .adjustments summary { width: fit-content; cursor: pointer; font-size: 20px; font-weight: 750; }
-.slider-grid { display: grid; grid-template-columns: 1fr auto; gap: 8px 22px; max-width: 700px; margin: 18px 0; }
-.slider-grid label { display: flex; justify-content: space-between; gap: 20px; font-weight: 650; }
+.basic-grid { display: grid; grid-template-columns: minmax(180px, 1fr) auto; gap: 8px 22px; max-width: 760px; margin: 18px 0 28px; }
+.basic-grid label, .levels label { display: flex; justify-content: space-between; gap: 20px; font-weight: 650; }
 output { min-width: 90px; text-align: right; font-variant-numeric: tabular-nums; }
 input[type="range"] { width: 100%; min-height: 34px; margin: 0; accent-color: #24563b; }
 .slider-ends { grid-column: 1 / -1; display: flex; justify-content: space-between; margin-top: -8px; color: #51584f; font-size: 15px; }
@@ -51,12 +62,137 @@ footer { padding: 22px 4px 0; color: #51584f; font-size: 15px; }
 footer p { margin: 0; }
 [hidden] { display: none !important; }
 
+.batch-view { display: block; margin-top: 16px; }
+.photo-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 360px), 1fr)); gap: 14px; min-width: 0; }
+.photo-card, .editor { min-width: 0; padding: 18px; border: 2px solid #ddd7c9; border-radius: 16px; background: #fffefa; }
+.photo-card h2, .editor h2 { margin: 0; font-size: 22px; line-height: 1.25; overflow-wrap: anywhere; }
+.photo-card-header { display: flex; justify-content: space-between; align-items: start; gap: 12px; }
+.photo-status { margin: 6px 0 12px; color: #51584f; font-size: 16px; }
+.candidate-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.candidate-card { min-width: 0; padding: 10px; border: 1px solid #d9d4c8; border-radius: 12px; background: #f8f7f2; }
+.candidate-card.is-selected { border: 3px solid #24563b; padding: 8px; }
+.candidate-card h3 { margin: 0 0 5px; font-size: 17px; }
+.candidate-card img { display: block; width: 100%; height: 120px; object-fit: contain; background: #e9e6de; }
+.candidate-state { min-height: 2.8em; margin: 6px 0; color: #51584f; font-size: 14px; }
+.candidate-actions { display: grid; gap: 6px; }
+.candidate-actions .button { width: 100%; min-height: 44px; padding: 7px 9px; font-size: 15px; }
+.candidate-choice { display: flex; align-items: start; gap: 8px; font-size: 15px; font-weight: 700; }
+.candidate-choice input { width: 24px; height: 24px; margin: 0; accent-color: #24563b; }
+.editor { position: fixed; inset: 0; z-index: 10; overflow: auto; width: 100%; max-width: none; padding: 16px 24px 24px; border: 0; border-radius: 0; background: #f5f2eb; }
+.editor-heading { display: grid; grid-template-columns: auto minmax(180px, 1fr) auto; gap: 16px; align-items: center; max-width: 1440px; margin: 0 auto 12px; }
+.editor-heading h2 { margin: 0; font-size: 21px; }
+.editor-heading .download-note { margin-top: 2px; }
+.editor-layout { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(340px, .9fr); gap: 16px; align-items: start; max-width: 1440px; margin: 0 auto; }
+.editor-layout > .preview { min-width: 0; margin: 0; }
+.editor-layout figure { padding: 8px; border-width: 1px; border-radius: 10px; }
+.editor-layout figcaption { margin-bottom: 6px; font-size: 14px; }
+.editor-layout .preview figure { display: flex; flex-direction: column; min-height: 0; }
+.photo-viewport { display: grid; place-items: center; min-height: 220px; height: calc(100vh - 190px); overflow: auto; background: #e9e6de; }
+.editor-layout .preview img { width: 100%; height: auto; max-height: none; object-fit: contain; transform-origin: center; }
+.zoom-controls { display: flex; gap: 6px; align-items: center; margin-bottom: 8px; }
+.zoom-controls output { min-width: 56px; font-size: 13px; }
+.editor .adjustments { max-height: calc(100vh - 92px); overflow: auto; margin: 0; padding: 12px; border-width: 1px; border-radius: 10px; }
+.editor .adjustments h3 { margin: 0 0 10px; font-size: 18px; }
+.editor .levels { gap: 4px; padding: 8px 10px; }
+.editor .levels label, .editor .basic-grid label { font-size: 14px; }
+.editor .basic-grid { gap: 2px 12px; margin: 10px 0 14px; }
+.editor .advanced-grid { gap: 10px; }
+.editor input[type="range"] { min-height: 28px; }
+.editor .curve-tools select { min-height: 40px; }
+.editor #curve-graph { width: min(100%, 220px); }
+.editor #histogram { height: 90px; }
+.editor .histogram { padding: 8px; }
+.editor .editor-actions { display: flex; flex-wrap: nowrap; gap: 8px; margin: 0; }
+.editor .editor-actions .button { min-height: 44px; white-space: nowrap; }
+.editor h2 { margin-bottom: 6px; }
+.preview { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 16px; }
+.preview figure { padding: 8px; }
+.preview figcaption { font-size: 16px; }
+.preview img { height: 34vh; max-height: 380px; }
+.editor-actions { display: flex; flex-wrap: wrap; gap: 10px; margin: 14px 0; }
+.editor-actions .button { min-height: 48px; font-size: 16px; }
+.adjustments { margin-top: 14px; }
+.advanced-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; align-items: start; }
+.levels { display: grid; gap: 8px; min-width: 0; margin: 0; padding: 14px; border: 1px solid #d9d4c8; border-radius: 12px; }
+.levels legend { padding: 0 6px; font-weight: 750; }
+.curve-tools { display: grid; gap: 8px; }
+.curve-tools label { font-weight: 700; }
+.curve-tools select { min-height: 48px; font-size: 17px; }
+#curve-graph { width: min(100%, 360px); aspect-ratio: 1; border: 1px solid #a9afa4; border-radius: 8px; background: #fff; touch-action: none; }
+.curve-grid { fill: none; stroke: #d9d4c8; stroke-width: 1; }
+.curve-line { fill: none; stroke: #24563b; stroke-width: 4; vector-effect: non-scaling-stroke; }
+.curve-point { fill: #fffefa; stroke: #24563b; stroke-width: 4; vector-effect: non-scaling-stroke; cursor: ns-resize; }
+.curve-point:focus { stroke: #b05a00; stroke-width: 6; outline: none; }
+.curve-help { margin: 0; color: #51584f; font-size: 15px; }
+.histogram { min-width: 0; margin: 0; padding: 12px; border: 1px solid #d9d4c8; border-radius: 12px; background: #fff; }
+.histogram figcaption { font-size: 17px; }
+#histogram { display: block; width: 100%; height: 140px; background: #f7f6f1; }
+.histogram-legend { display: flex; gap: 18px; font-size: 14px; }
+.histogram-legend span:nth-child(1) { color: #b53d35; }
+.histogram-legend span:nth-child(2) { color: #287147; }
+.histogram-legend span:nth-child(3) { color: #315eab; }
+.controls-help { margin: 8px 0 0; color: #51584f; font-size: 13px; }
+.save-selection { position: fixed; inset: 0; z-index: 20; display: grid; place-items: center; overflow: auto; padding: 16px; background: rgb(32 40 36 / 45%); }
+.save-selection-card { width: min(100%, 560px); max-height: 90vh; overflow: auto; padding: 20px; border: 1px solid #d9d4c8; border-radius: 12px; background: #fffefa; }
+.save-selection-card h2 { margin: 0; font-size: 20px; }
+.save-selection-card p { color: #51584f; font-size: 14px; }
+.save-selection-list { display: grid; gap: 6px; margin: 12px 0; }
+.save-photo-choice { display: flex; align-items: center; gap: 10px; min-height: 44px; padding: 6px 8px; border: 1px solid #d9d4c8; border-radius: 8px; }
+.save-photo-choice input { width: 22px; height: 22px; accent-color: #24563b; }
+.editor-heading .editor-actions { flex-wrap: nowrap; }
+.editor-actions .button { min-height: 44px; font-size: 14px; }
+
+body { max-width: 1440px; padding: 16px 20px 12px; }
+.top { padding-bottom: 12px; }
+h1 { font-size: clamp(26px, 2.6vw, 34px); }
+.intro { margin-top: 4px; font-size: 15px; }
+.privacy { font-size: 14px; }
+main { padding-top: 12px; }
+.controls { padding: 12px; border-width: 1px; border-radius: 10px; }
+.primary-actions { gap: 6px; }
+.button { min-height: 40px; padding: 7px 11px; border-radius: 7px; font-size: 14px; }
+.file-name { margin-top: 8px; font-size: 14px; }
+.download-note, .status { font-size: 13px; }
+.photo-card, .editor { padding: 12px; border-width: 1px; border-radius: 10px; }
+.photo-card h2 { font-size: 16px; }
+.photo-status { margin: 4px 0 8px; font-size: 13px; }
+.candidate-grid { gap: 8px; }
+.candidate-card { padding: 7px; border-radius: 8px; }
+.candidate-card h3 { font-size: 14px; }
+.candidate-card img { height: 96px; }
+.candidate-state { min-height: 2em; margin: 4px 0; font-size: 12px; }
+.candidate-actions .button { min-height: 36px; font-size: 13px; }
+.photo-original-thumb { display: block; width: 64px; height: 64px; margin: 0 0 8px; object-fit: contain; background: #e9e6de; }
+.candidate-card img { height: clamp(160px, 24vh, 240px); }
+.editor-layout > .preview { grid-template-columns: minmax(0, 1fr); }
+.editor-layout .preview img { width: 100%; height: 100%; object-fit: contain; }
+.editor-heading { gap: 10px; }
+.editor-heading h2 { font-size: 18px; }
+.editor .adjustments h3 { font-size: 16px; }
+.levels legend { font-size: 13px; }
+.save-selection-card { padding: 16px; }
+
 @media (max-width: 800px) {
   body { padding: 22px 18px; }
   .top { align-items: start; flex-direction: column; }
   .privacy { margin-top: 4px; }
-  .preview { grid-template-columns: 1fr; }
+  .editor-heading { grid-template-columns: auto 1fr; }
+  .editor-heading .editor-actions { grid-column: 1 / -1; }
+  .editor-layout { grid-template-columns: 1fr; }
+  .photo-viewport { height: 46vh; }
+  .editor .adjustments { max-height: none; }
   figure img, figure canvas { height: 40vh; max-height: 480px; }
+}
+
+@media (max-width: 560px) {
+  body { padding: 16px 12px; }
+  .controls { padding: 16px; }
+  .primary-actions { display: grid; }
+  .primary-actions .button { width: 100%; }
+  .candidate-grid, .advanced-grid { grid-template-columns: 1fr; }
+  .candidate-card img { height: 180px; }
+  .basic-grid { grid-template-columns: 1fr; gap: 4px; }
+  .basic-grid input[type="range"] { margin-bottom: 8px; }
 }
 
 @media (prefers-reduced-motion: reduce) {

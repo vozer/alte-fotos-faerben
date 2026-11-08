@@ -23,14 +23,25 @@ export const MODEL_CATALOG = {
 
 export type ModelId = keyof typeof MODEL_CATALOG;
 export const DEFAULT_MODEL_ID: ModelId = "deoldify-stable";
+export const MAX_BATCH_PHOTOS = 20;
 
 export function isModelId(value: unknown): value is ModelId {
   return typeof value === "string" && Object.hasOwn(MODEL_CATALOG, value);
 }
 
-export interface PhotoSelection {
+export interface BatchPhotoInfo {
   id: string;
   name: string;
+  mimeType?: "image/jpeg" | "image/png";
+  errorMessage?: string;
+}
+
+export interface BatchSelection {
+  id: string;
+  photos: BatchPhotoInfo[];
+}
+
+export interface PhotoBytes {
   mimeType: "image/jpeg" | "image/png";
   bytes: Uint8Array;
 }
@@ -40,8 +51,15 @@ export interface ModelProgress {
 }
 
 export interface DesktopApi {
-  selectPhoto(): Promise<PhotoSelection | null>;
+  selectBatch(hasUnsavedWork: boolean): Promise<BatchSelection | null>;
+  readPhoto(batchId: string, photoId: string): Promise<PhotoBytes>;
   ensureModel(modelId: ModelId): Promise<string>;
-  savePhoto(photoId: string, png: Uint8Array): Promise<boolean>;
+  writeCandidate(batchId: string, photoId: string, modelId: ModelId, png: Uint8Array): Promise<void>;
+  readCandidate(batchId: string, photoId: string, modelId: ModelId): Promise<Uint8Array>;
+  saveCandidate(batchId: string, photoId: string, modelId: ModelId, png: Uint8Array): Promise<boolean>;
+  chooseOutputFolder(batchId: string): Promise<string | null>;
+  saveBatchOutput(batchId: string, folderId: string, photoId: string, modelId: ModelId, png: Uint8Array): Promise<string>;
+  updateBatchUnsaved(batchId: string, hasUnsavedWork: boolean): Promise<void>;
+  closeBatch(batchId: string, hasUnsavedWork: boolean): Promise<boolean>;
   onModelProgress(listener: (progress: ModelProgress) => void): () => void;
 }
