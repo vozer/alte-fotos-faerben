@@ -1,0 +1,66 @@
+{
+  "name": "alte-fotos-faerben",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Lokale DeOldify-Färbung für alte Fotos",
+  "main": "dist/main/index.js",
+  "scripts": {
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "build": "tsc -p tsconfig.main.json && vite build",
+    "test": "vitest run",
+    "smoke:model": "tsx scripts/smoke-model.ts",
+    "package:mac": "npm run build && electron-builder --mac dmg --arm64",
+    "package:win": "npm run build && electron-builder --win nsis --x64"
+  },
+  "dependencies": {
+    "onnxruntime-web": "1.31.1"
+  },
+  "devDependencies": {
+    "@types/node": "26.0.0",
+    "electron": "45.2.3",
+    "electron-builder": "26.18.1",
+    "jsdom": "27.4.0",
+    "tsx": "4.20.6",
+    "typescript": "7.0.2",
+    "vite": "8.3.6",
+    "vitest": "5.1.0"
+  },
+  "build": {
+    "appId": "de.private.altfotosfaerben",
+    "productName": "Alte Fotos färben",
+    "asar": true,
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "dist/**/*",
+      "package.json"
+    ],
+    "mac": {
+      "target": [
+        {
+          "target": "dmg",
+          "arch": ["arm64"]
+        }
+      ],
+      "identity": null,
+      "artifactName": "DeOldify-macOS-arm64.dmg"
+    },
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": ["x64"]
+        }
+      ],
+      "artifactName": "DeOldify-Windows-x64-Setup.${ext}"
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": false,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true
+    }
+  }
+}

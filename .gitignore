@@ -1,0 +1,12 @@
+.reference/
+node_modules/
+dist/
+release/
+*.log
+.DS_Store
+*.onnx
+.env
+.env.*
+!.env.example
+secrets/
+cookies.json
