@@ -12,3 +12,4 @@ public/runtime/ort-wasm-simd-threaded.wasm
 !.env.example
 secrets/
 cookies.json
+.claude/settings.local.json
