@@ -14,14 +14,20 @@ The app may have valid model files in its user-data folder.
 ## Main flow
 
 1. The user closes the app.
-2. The user starts the new unsigned Windows x64 installer.
-3. The installer updates the existing app installation.
-4. The user starts the app.
-5. The app verifies and reuses each valid cached model.
-6. The user processes photos offline with both models.
+2. If the existing uninstaller matches a known damaged release, the user
+   replaces it with the corrected uninstaller from the Windows test release.
+3. The user starts the Windows x64 installer.
+4. The installer updates the existing app installation.
+5. The user starts the app.
+6. The app verifies and reuses each valid cached model.
+7. The user processes photos offline with both models.
 
 ## Alternative flows
 
+- The installed uninstaller matches a known damaged release: use its matching
+  corrected uninstaller from the test release before installing the update.
+- The installed uninstaller does not match a known release: stop and check its
+  identity before replacing it.
 - A cached model is missing or has a wrong size or hash: the app downloads and
   verifies that model only.
 - A model is invalid and the computer is offline: the app reports that internet
